@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "879020852601",
+    "project_id": "digitopia-b73a7",
+    "storage_bucket": "digitopia-b73a7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:879020852601:android:1fc938862288fbd1091ba8",
+        "android_client_info": {
+          "package_name": "com.example.digipotia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJw2DNaNZWehnXau_-KyMGTRStQHWzQKU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

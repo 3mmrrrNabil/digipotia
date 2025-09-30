@@ -1,0 +1,27 @@
+abstract class ApiConstants {
+  static const String baseUrl = 'http://ain.runasp.net/api/';
+  static const String baseUrl2 = 'http://ain.runasp.net';
+  static const String baseUrl3 = 'https://ain.runasp.net';
+
+
+  static const String forgotPassword = 'auth/forgotPassword';
+  static const String verifyResetCode = 'auth/verifyResetCode';
+  static const String changePassword = 'auth/resetPassword';
+  static const String loginRoute = 'auth/signin';
+  static const String categories = 'categories.php';
+  static const String meals = 'filter.php';
+  static const String mealsBaseUrl = 'https://www.themealdb.com/api/json/v1/1/';
+  static const String levels = 'levels';
+  static const String musclesRandom = 'muscles/random';
+  static const String muscles = 'muscles';
+  static const String musclesGroup = 'musclesGroup/{id}';
+  static const String mealsCategory = 'categories.php';
+  static const String mealDetailsRoute = 'lookup.php';
+  static const String getExercisesByMuscleDifficulty =
+      'exercises/by-muscle-difficulty';
+  static const String primeMoverMuscleId = 'primeMoverMuscleId';
+  static const String difficultyLevelId = 'difficultyLevelId';
+  static const String getDataProfile = 'auth/profile-data';
+  static const String editProfile = 'auth/editProfile';
+  static const String uploadPhoto='auth/upload-photo';
+}
