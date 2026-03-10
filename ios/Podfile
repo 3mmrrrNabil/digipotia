@@ -1,17 +1,21 @@
-platform :ios, '9.0'
+platform :ios, '15.0'       # مهم جدًا لتجنب خطأ platform
 inhibit_all_warnings!
 
-target 'MyApp' do
-  pod 'ObjectiveSugar', '~> 0.5'
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
 
-  target 'MyAppTests' do
-    inherit! :search_paths
-    pod 'OCMock', '~> 2.0.1'
-  end
+  # هذا السطر يقوم بتثبيت جميع Flutter plugins على Mac
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+
+# إذا عندك اختبارات
+target 'RunnerTests' do
+  inherit! :search_paths
 end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|
-    puts "#{target.name}"
+    puts "Pod target: #{target.name}"
   end
 end
