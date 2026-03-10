@@ -1,0 +1,18 @@
+platform :ios, '15.0'       # مهم جدًا لتجنب خطأ platform
+inhibit_all_warnings!
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+end
+
+# إذا عندك اختبارات
+target 'RunnerTests' do
+  inherit! :search_paths
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    puts "Pod target: #{target.name}"
+  end
+end
