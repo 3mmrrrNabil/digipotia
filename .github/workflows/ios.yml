@@ -16,7 +16,6 @@ jobs:
 
       - run: flutter pub get
 
-      # هذه الخطوة ستنشئ Podfile تلقائيًا لو مش موجود
       - run: |
           cd ios
           flutter pub get
