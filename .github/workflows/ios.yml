@@ -10,9 +10,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v3
+        with:
+          channel: stable
 
       - run: flutter pub get
+
+      # هذه الخطوة ستنشئ Podfile تلقائيًا لو مش موجود
+      - run: |
+          cd ios
+          flutter pub get
+          pod install || true
+          cd ..
 
       - run: flutter build ipa --no-codesign
 
