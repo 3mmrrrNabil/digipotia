@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../../../../core/constants/app_values.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/network/retrofit/ain_api.dart';
+import '../../../../core/routes/routes.dart';
+import '../../../../core/storage_helper/app_shared_preference_helper.dart';
 import '../cubit/profile_cubit.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -18,14 +21,24 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   late final ProfileCubit _cubit;
-
   @override
   void initState() {
     super.initState();
+    _checkLogin();
+
     _cubit = serviceLocator<ProfileCubit>();
     _cubit.load();
-  }
 
+  }
+  Future<void> _checkLogin() async {
+    final token = await SharedPreferencesHelper.getString(AppValues.token);
+
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login'); // أو المسار الفعلي لشاشة تسجيل الدخول
+      }
+    }
+  }
   @override
   void dispose() {
     _cubit.close();
@@ -87,250 +100,253 @@ class _ProfilePageState extends State<ProfilePage> {
 
           return Scaffold(
             backgroundColor: Colors.white,
-            appBar: AppBar(
-              centerTitle: true,
-              title: Text(
-                'الملف الشخصي',
-                style: GoogleFonts.cairo(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF4D4D4D),
-                ),
-              ),
-              backgroundColor: Colors.white,
-              elevation: 3,
-              shadowColor: Colors.black,
-            ),
-            body: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: wp(4), vertical: hp(3)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Profile Card
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(wp(2)),
-                    decoration: ShapeDecoration(
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      shadows: const [
-                        BoxShadow(
-                          color: Color(0x3F000000),
-                          blurRadius: 4,
-                          offset: Offset(0, 0),
-                        )
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Name & Avatar Row
-                        Row(
+            body: SafeArea(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.symmetric(horizontal: wp(4), vertical: hp(3)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+InkWell(
+    onTap: ()=> Navigator.pushReplacementNamed(context,Routes.login),
+    child: Icon(Icons.logout)),
+
+                    Padding(
+                      padding: const EdgeInsets.only(top: 20),
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(wp(2)),
+                        decoration: ShapeDecoration(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          shadows: const [
+                            BoxShadow(
+                              color: Color(0x3F000000),
+                              blurRadius: 4,
+                              offset: Offset(0, 0),
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              width: wp(12),
-                              height: wp(12),
-                              padding: EdgeInsets.all(wp(3)),
-                              decoration: ShapeDecoration(
-                                color: const Color(0xFF2563EB),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                shadows: const [
-                                  BoxShadow(
-                                    color: Color(0x3F000000),
-                                    blurRadius: 4,
-                                    offset: Offset(0, 0),
-                                  )
-                                ],
-                              ),
-                              child: Center(
-                                child: Icon(
-                                  Icons.person_outline,
-                                  color: Colors.white,
-                                  size: context.sp(20),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: wp(2)),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            // Name & Avatar Row
+                            Row(
                               children: [
-                                Text(
-                                  u.displayName,
-                                  style: GoogleFonts.cairo(
-                                    color: Colors.black,
-                                    fontSize: wp(5),
-                                    fontWeight: FontWeight.w500,
+
+                                Container(
+                                  width: wp(12),
+                                  height: wp(12),
+                                  padding: EdgeInsets.all(wp(3)),
+                                  decoration: ShapeDecoration(
+                                    color: const Color(0xFF2563EB),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(30),
+                                    ),
+                                    shadows: const [
+                                      BoxShadow(
+                                        color: Color(0x3F000000),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 0),
+                                      )
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.person_outline,
+                                      color: Colors.white,
+                                      size: context.sp(20),
+                                    ),
                                   ),
                                 ),
-                                Row(
+                                SizedBox(width: wp(2)),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      Icons.date_range_outlined,
-                                      color: Color(0xFF2563EB),
-                                      size: context.sp(16),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          u.displayName,
+                                          style: GoogleFonts.cairo(
+                                            color: Colors.black,
+                                            fontSize: wp(5),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    Text(
-                                      '  عضو منذ ديسمبر 2024',
-                                      style: GoogleFonts.cairo(
-                                        color: Colors.black,
-                                        fontSize: wp(2.7),
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.date_range_outlined,
+                                          color: Color(0xFF2563EB),
+                                          size: context.sp(16),
+                                        ),
+                                        Text(
+                                          '  عضو منذ ديسمبر 2024',
+                                          style: GoogleFonts.cairo(
+                                            color: Colors.black,
+                                            fontSize: wp(2.7),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
-                        SizedBox(height: hp(2)),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'متبقي ${totalPointsForAllBadges} نقطه علي وسامك القادم',
-                            style: GoogleFonts.cairo(
-                              color: const Color(0xFF747474),
-                              fontSize: wp(3.2),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: hp(1.3)),
-                        Stack(
-                          alignment: Alignment.bottomLeft,
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              height: hp(1.8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Color(0x3F000000),
-                                    blurRadius: 4,
-                                    offset: Offset(0, 0),
-                                  )
+                            SizedBox(height: hp(2)),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'متبقي ${totalPointsForAllBadges} نقطه علي وسامك القادم',
+                                    style: GoogleFonts.cairo(
+                                      color: const Color(0xFF747474),
+                                      fontSize: wp(3.2),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                            Container(
-                              width: wp(40) * progressPercent,
-                              height: hp(1.8),
-                              decoration: BoxDecoration(
-                                color: const Color(0x9EFFF712),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: hp(2)),
-                        InkWell(
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return Points(
-                                  points: u.trustPoints,
-                                  completedBadges: u.badge == 0 ? 0 : u.badge,
-                                );
-                              },
-                            ),
-                          ),
-                          child: Container(
-                            width: double.infinity,
-                            height: hp(4),
-                            decoration: ShapeDecoration(
-                              color: const Color(0xFFFFFEE6),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              shadows: const [
-                                BoxShadow(
-                                  color: Color(0x3F000000),
-                                  blurRadius: 4,
-                                  offset: Offset(0, 0),
-                                )
+                            SizedBox(height: hp(1.3)),
+                            Stack(
+                              alignment: Alignment.bottomLeft,
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  height: hp(1.8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Color(0x3F000000),
+                                        blurRadius: 4,
+                                        offset: Offset(0, 0),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                Container(
+                                  width: wp(40) * progressPercent,
+                                  height: hp(1.8),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0x9EFFF712),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                ),
                               ],
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const SizedBox(),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'عرض النقاط',
-                                      style: GoogleFonts.cairo(
-                                        color: Colors.black,
-                                        fontSize: wp(3.2),
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    SvgPicture.asset(
-                                      "assets/svg/SparklesOutline.svg",
-                                      width: wp(3),
-                                      height: hp(3),
+                            SizedBox(height: hp(2)),
+                            InkWell(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) {
+                                    return Points(
+                                      points: u.trustPoints,
+                                      completedBadges: u.badge == 0 ? 0 : u.badge,
+                                    );
+                                  },
+                                ),
+                              ),
+                              child: Container(
+                                width: double.infinity,
+                                height: hp(4),
+                                decoration: ShapeDecoration(
+                                  color: const Color(0xFFFFFEE6),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  shadows: const [
+                                    BoxShadow(
+                                      color: Color(0x3F000000),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 0),
                                     )
                                   ],
                                 ),
-                                const SizedBox()
-                              ],
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const SizedBox(),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'عرض النقاط',
+                                          style: GoogleFonts.cairo(
+                                            color: Colors.black,
+                                            fontSize: wp(3.2),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        SvgPicture.asset(
+                                          "assets/svg/SparklesOutline.svg",
+                                          width: wp(3),
+                                          height: hp(3),
+                                        )
+                                      ],
+                                    ),
+                                    const SizedBox()
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        SizedBox(height: hp(1)),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: hp(2)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      buildInfoBox(context, '${state.data!.trustPoints}  من النقاط  ',
-                          const Color(0xFFFFFEE6), "assets/svg/SparklesOutline.svg"),
-                      buildInfoBox(context, '${_cubit.countStatus4()} تم حله',
-                          const Color(0xFF48BB78).withOpacity(0.15), "assets/svg/true.svg"),
-                      buildInfoBox(context, '${filteredReports.length} ',
-                          const Color(0xFF2563EB).withOpacity(0.15), "assets/svg/document.svg"),
-                    ],
-                  ),
-                  SizedBox(height: hp(2)),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'التقارير السابقه',
-                        style: GoogleFonts.cairo(
-                          color: Colors.black,
-                          fontSize: wp(5),
-                          fontWeight: FontWeight.w600,
+                            SizedBox(height: hp(1)),
+                          ],
                         ),
                       ),
-
-
-                    ],
-                  ),
-                  SizedBox(height: hp(1)),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: filteredReports.length,
-                    itemBuilder: (context, index) {
-                      final report = filteredReports[index];
-                      return buildReportItem(
-                        context,
-                        report.title ?? 'مشكلة بدون عنوان',
-                        formatTimeAgo(DateTime.parse(report.createdAt
-                        )),
-                        report.status,
-                      );
-                    },
-                  ),
-                ],
+                    ),
+                    SizedBox(height: hp(2)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        buildInfoBox(context, '${state.data!.trustPoints}  من النقاط  ',
+                            const Color(0xFFFFFEE6), "assets/svg/SparklesOutline.svg"),
+                        buildInfoBox(context, '${_cubit.countStatus4()} تم حله',
+                            const Color(0xFF48BB78).withOpacity(0.15), "assets/svg/true.svg"),
+                        buildInfoBox(context, '${filteredReports.length} ',
+                            const Color(0xFF2563EB).withOpacity(0.15), "assets/svg/document.svg"),
+                      ],
+                    ),
+                    SizedBox(height: hp(2)),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'التقارير السابقه',
+                          style: GoogleFonts.cairo(
+                            color: Colors.black,
+                            fontSize: wp(5),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+              
+              
+                      ],
+                    ),
+                    SizedBox(height: hp(1)),
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredReports.length,
+                      itemBuilder: (context, index) {
+                        final report = filteredReports[index];
+                        return buildReportItem(
+                          context,
+                          report.title ?? 'مشكلة بدون عنوان',
+                          formatTimeAgo(DateTime.parse(report.createdAt
+                          )),
+                          report.status,
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
           );

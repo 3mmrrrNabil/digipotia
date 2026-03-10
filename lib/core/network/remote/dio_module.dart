@@ -10,16 +10,25 @@ import '../retrofit/ain_api.dart';
 class AuthInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await   SharedPreferencesHelper.getString(AppValues.token);
-    print(token);
-    print("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+    final token = await SharedPreferencesHelper.getString(AppValues.token);
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
+    handler.next(options);
+  }
 
-    handler.next(options); // استمر في الطلب
+  @override
+  void onError(DioError err, ErrorInterceptorHandler handler) async {
+    // لو الرد Unauthorized
+    if (err.response?.statusCode == 401) {
+      // نحذف التوكن
+      await SharedPreferencesHelper.removeData(key: AppValues.token);
+    }
+
+    handler.next(err); // استمر في الخطأ
   }
 }
+
 @module
 abstract class DioModule {
   @lazySingleton

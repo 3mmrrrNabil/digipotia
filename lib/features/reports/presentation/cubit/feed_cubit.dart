@@ -2,6 +2,7 @@ import '../../../../core/network/retrofit/ain_api.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
 import '../../domain/repositories/reports_repository.dart';
+
 class FeedState {
   final ReportInteractionsDto? data;
   final bool isLoading;
@@ -13,7 +14,8 @@ class FeedState {
   final List<ReportDto> environmentItems;
   final List<ReportDto> otherItems;
   final String? error;
-  final Map<String, ReportInteractionsDto> postsMap; // ✅ ضفناها للستيت
+  final Map<String, ReportInteractionsDto> postsMap; // موجود
+  final Map<String, int> localCommentCounts; // ✅ جديد: عدد الكومنت المحلي
 
   FeedState({
     this.data,
@@ -26,7 +28,8 @@ class FeedState {
     required this.environmentItems,
     required this.otherItems,
     this.error,
-    required this.postsMap, // ✅ مطلوب
+    required this.postsMap,
+    required this.localCommentCounts, // ✅ مطلوب
   });
 
   FeedState copyWith({
@@ -41,6 +44,7 @@ class FeedState {
     String? error,
     ReportInteractionsDto? data,
     Map<String, ReportInteractionsDto>? postsMap,
+    Map<String, int>? localCommentCounts, // ✅ تحديث الماب الجديد
   }) {
     return FeedState(
       isLoading: isLoading ?? this.isLoading,
@@ -53,16 +57,16 @@ class FeedState {
       otherItems: otherItems ?? this.otherItems,
       error: error,
       data: data ?? this.data,
-      postsMap: postsMap ?? this.postsMap, // ✅ تحديث الماب
+      postsMap: postsMap ?? this.postsMap,
+      localCommentCounts: localCommentCounts ?? this.localCommentCounts, // ✅ تحديث
     );
   }
 }
 
 @injectable
-
 class FeedCubit extends Cubit<FeedState> {
   final ReportsRepository _repo;
-  List<String> searchResults = []; // هنا نخزن الـIDs اللي بتوافق البحث
+  List<String> searchResults = [];
 
   FeedCubit(this._repo)
       : super(FeedState(
@@ -72,13 +76,25 @@ class FeedCubit extends Cubit<FeedState> {
     trafficItems: [],
     environmentItems: [],
     otherItems: [],
-    postsMap: {}, // ✅ نبدأ بماب فاضية
+    postsMap: {},
+    localCommentCounts: {}, // ✅ نبدأ فاضية
   ));
+  void updateLocalCommentCount(String postId, int newCount) {
+    final updatedLocalComments = Map<String, int>.from(state.localCommentCounts);
+    updatedLocalComments[postId] = newCount;
+    emit(state.copyWith(localCommentCounts: updatedLocalComments));
+  }
+
+  /// أو دالة بسيطة للزيادة بمقدار واحد لو حبيت
+  void incrementComment(String postId) {
+    final updatedLocalComments = Map<String, int>.from(state.localCommentCounts);
+    updatedLocalComments[postId] = (updatedLocalComments[postId] ?? 0) + 1;
+    emit(state.copyWith(localCommentCounts: updatedLocalComments));
+  }
 
   void searchByDisplayName(String query) {
     final lowerQuery = query.toLowerCase();
 
-    // نفلتر الـallItems حسب displayName الموجود في postsMap
     searchResults = state.allItems
         .where((item) {
       final post = state.postsMap[item.id];
@@ -87,25 +103,24 @@ class FeedCubit extends Cubit<FeedState> {
         .map((e) => e.id)
         .toList();
 
-    emit(state.copyWith(isLoading: false)); // لإعادة بناء الـUI
-  }  Future<void> loadFirstPage() async {
-    // ✅ reset هنا مرة واحدة
-    emit(state.copyWith(isLoading: true, postsMap: {}));
+    emit(state.copyWith(isLoading: false));
+  }
+
+  Future<void> loadFirstPage() async {
+    emit(state.copyWith(isLoading: true, postsMap: {}, localCommentCounts: {}));
 
     try {
       final items = await _repo.getFeed(1, 1000);
-
       final allIds = items.map((e) => e.id ?? "1").toList();
-
       await loadAllInteractions(allIds);
-print('ssssssssssssssssssssssssssssssssssssssssssssssssssss');
+
       final security = items.where((e) => e.category == 1).toList();
       final safety = items.where((e) => e.category == 2).toList();
       final traffic = items.where((e) => e.category == 3).toList();
       final environment = items.where((e) => e.category == 4).toList();
       final other = items.where((e) => e.category == 5).toList();
 
-      // ✅ هنا ما نعملش reset تاني
+      // ✅ بعد تحميل البيانات
       emit(state.copyWith(
         isLoading: false,
         isSuccess: true,
@@ -116,8 +131,6 @@ print('ssssssssssssssssssssssssssssssssssssssssssssssssssss');
         environmentItems: environment,
         otherItems: other,
       ));
-
-      // ✅ بعد ما جهزنا الليست، نجيب الانتراكشن
     } catch (e) {
       emit(state.copyWith(
         isLoading: false,
@@ -133,21 +146,21 @@ print('ssssssssssssssssssssssssssssssssssssssssssssssssssss');
 
   Future<void> loadAllInteractions(List<String> allIds) async {
     try {
-print("oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo");
       final futures = allIds.map((id) => _repo.getInteractions(id));
-      print(futures.length);
-      print("mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm");
       final results = await Future.wait(futures);
 
       final updatedMap = Map<String, ReportInteractionsDto>.from(state.postsMap);
+      final updatedLocalComments = Map<String, int>.from(state.localCommentCounts);
       for (int i = 0; i < allIds.length; i++) {
         final id = allIds[i] ?? "1";
         updatedMap[id] = results[i];
+        updatedLocalComments[id] = results[i].commentCount ?? 0; // ✅ عدد الكومنت الافتراضي
       }
 
-      emit(state.copyWith(postsMap: updatedMap)); // ✅ تخزن في الستيت
+      emit(state.copyWith(postsMap: updatedMap, localCommentCounts: updatedLocalComments));
     } catch (e) {
       emit(state.copyWith(error: e.toString()));
     }
   }
+
 }

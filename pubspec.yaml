@@ -68,6 +68,7 @@ dependencies:
   flutter_map: ^8.2.2
   url_launcher: ^6.3.2
   firebase_core: ^4.1.1
+  share_plus: ^12.0.0
 
 dev_dependencies:
 

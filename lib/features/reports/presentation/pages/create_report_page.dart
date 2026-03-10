@@ -41,13 +41,26 @@ class _CreateReportWizardState extends State<CreateReportWizard> {
   final _descController = TextEditingController();
 
   late final ReportsRepository _repo;
-
   @override
   void initState() {
     super.initState();
+    _checkLogin();
+
     _repo = serviceLocator<ReportsRepository>();
   }
 
+
+
+
+
+  Future<void> _checkLogin() async {
+   final token = await SharedPreferencesHelper.getString(AppValues.token);
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login'); // أو المسار الفعلي لشاشة تسجيل الدخول
+      }
+    }
+  }
   Future<void> _pickFile(bool isVideo) async {
     final picker = ImagePicker();
 
@@ -137,7 +150,7 @@ class _CreateReportWizardState extends State<CreateReportWizard> {
       if (reporterId.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Missing reporter id')),
+            const SnackBar(content: Text('something went wrong')),
           );
         }
         return;
@@ -148,15 +161,15 @@ class _CreateReportWizardState extends State<CreateReportWizard> {
           title: _titleController.text.trim(),
           description: _descController.text.trim(),
           category: _category ?? 5,
-          visibility: _visibility??1,
-          latitude: _latitude ?? 0,
-          longitude: _longitude ?? 0,
+          visibility: _visibility?? 1,
+          latitude: _latitude ?? 0.0,
+          longitude: _longitude ?? 0.0,
           reporterId: reporterId,
         ),
       );
-
-      await _repo.upload(id, _file!);
-
+      if (_file!=null) {
+        await _repo.upload(id, _file!);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -214,23 +227,23 @@ class _CreateReportWizardState extends State<CreateReportWizard> {
                 children: [
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => setState(() => _category = 2),
+                    onTap: () => setState(() => _category = 1),
                     child: ProblemCategoryItem(
-                      title: "أمني",
+                      title: "امني",
                       color: Colors.red,
                       description: "مشاكل الأمان والإضاءة والحراسة",
                       iconPath: "assets/svg/امني.svg",
-                      isSelected: _category == 2,
+                      isSelected: _category == 1,
                     ),
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => setState(() => _category = 3),
+                    onTap: () => setState(() => _category = 2),
                     child: ProblemCategoryItem(
                       title: "سلامة",
                       description: "مخاطر السلامة والحوادث المحتملة",
                       iconPath: "assets/svg/سلامه.svg",
-                      isSelected: _category == 3,
+                      isSelected: _category == 2,
                     ),
                   ),
                   const Spacer(),
@@ -252,12 +265,12 @@ class _CreateReportWizardState extends State<CreateReportWizard> {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () => setState(() => _category = 5),
+                    onTap: () => setState(() => _category = 3),
                     child: ProblemCategoryItem(
                       title: "مروري",
                       description: "مشاكل الطرق والمرور والمواصلات",
                       iconPath: "assets/svg/مروري.svg",
-                      isSelected: _category == 5,
+                      isSelected: _category ==3,
                     ),
                   ),
                   const Spacer(),
@@ -265,11 +278,11 @@ class _CreateReportWizardState extends State<CreateReportWizard> {
               ),
               const Spacer(),
               GestureDetector(
-                onTap: () => setState(() => _category = 1),
+                onTap: () => setState(() => _category = 5),
                 child: ProblemCategoryItem(
                   title: "أخرى",
                   iconPath: "assets/svg/الكل.svg",
-                  isSelected: _category == 1,
+                  isSelected: _category == 5,
                 ),
               ),
               const Spacer(),
@@ -1276,28 +1289,6 @@ class _CreateReportWizardState extends State<CreateReportWizard> {
                 padding: EdgeInsets.only(top: context.hp(3)),
                 child: Column(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                        const Spacer(),
-                        Text(
-                          'اضافه بلاغ جديد',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.cairo(
-                            color: const Color(0xFF4D4D4D),
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const Spacer(),
-                      ],
-                    ),
                     SizedBox(height: context.hp(3)),
                     Row(
                       mainAxisSize: MainAxisSize.min,

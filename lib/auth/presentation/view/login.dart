@@ -195,7 +195,7 @@ class _LoginFormState extends State<_LoginForm>
           Navigator.of(context).pop();
           AppDialogs.showSuccessDialog(context, message: "successfully login" ?? '');
           Navigator.pushNamedAndRemoveUntil(
-            context, Routes.feed, (route) => false,);
+            context, Routes.appSection, (route) => false,);
         } else if (state is LoginErrorState) {
           Navigator.of(context).pop();
           WidgetsBinding.instance.addPostFrameCallback((_) {

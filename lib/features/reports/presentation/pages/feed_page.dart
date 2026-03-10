@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:digipotia/core/constants/app_values.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/di/service_locator.dart';
 import '../../../../core/extensions/media_query_extensions.dart';
 import '../../../../core/network/retrofit/ain_api.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/network/remote/api_constants.dart';
+import '../../../../core/storage_helper/app_shared_preference_helper.dart';
 import '../../domain/repositories/reports_repository.dart';
 import '../cubit/feed_cubit.dart';
 import 'comments/comments_section.dart';
@@ -40,13 +43,20 @@ class _FeedPageState extends State<FeedPage> {
   ];
 
   String selectedCategory = "الكل";
+  late final currentUserId;
+  bool? _isLoggedIn;
 
   @override
   void initState() {
     super.initState();
+    _checkLogin();
     _cubit = serviceLocator<FeedCubit>();
     _cubit.loadFirstPage();
     _repo = serviceLocator<ReportsRepository>();
+    _loadCurrentUser();
+
+
+
   }
 
   @override
@@ -55,7 +65,19 @@ class _FeedPageState extends State<FeedPage> {
     _searchController.dispose();
     super.dispose();
   }
+  Future<void> _checkLogin() async {
+    final token = await SharedPreferencesHelper.getString(AppValues.token);
 
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login'); // أو المسار الفعلي لشاشة تسجيل الدخول
+      }
+    }
+  }
+  Future<void> _loadCurrentUser() async {
+    currentUserId = await SharedPreferencesHelper.getData(key: AppValues.userId);
+    setState(() {}); // لإعادة بناء الشاشة بعد تحميل الـ userId
+  }
   String buildMediaUrl2(String? path) {
     if (path == null || path.isEmpty) return "";
     return "${ApiConstants.baseUrl2}$path";
@@ -159,7 +181,9 @@ class _FeedPageState extends State<FeedPage> {
         toolbarHeight: 80, // علشان نسيب مساحة تحت
         title: Padding(
           padding: const EdgeInsets.only(top: 15), // تبعده عن الشايي بار
-          child: TextField(
+          child:TextField(
+            controller: _searchController,
+            onChanged: _onSearchChanged, // دي أهم حاجة
             decoration: InputDecoration(
               hintText: "ابحث هنا...",
               prefixIcon: const Icon(Icons.search, color: Colors.grey),
@@ -167,7 +191,7 @@ class _FeedPageState extends State<FeedPage> {
               fillColor: Colors.grey.shade200,
               contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 20),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(30), // دائري
+                borderRadius: BorderRadius.circular(30),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -237,7 +261,10 @@ class _FeedPageState extends State<FeedPage> {
               child: BlocBuilder<FeedCubit, FeedState>(
                 bloc: _cubit,
                 builder: (context, state) {
-                  if (state.isLoading) return const Center(child: CircularProgressIndicator());
+                  if (state.isLoading)
+                  {
+                    return Center(child: CircularProgressIndicator());
+                }
                   if (!state.isSuccess && state.error != null) return Center(child: Text("حدث خطأ: ${state.error}"));
 
                   List<ReportDto> filteredReports;
@@ -274,6 +301,7 @@ class _FeedPageState extends State<FeedPage> {
                           child: ListView.builder(
                             itemCount: filteredReports.length,
                             itemBuilder: (context, index) {
+
                               final report = filteredReports[index];
                               final interactions = state.postsMap[report.id];
                               final current = state.postsMap[report.id];
@@ -328,76 +356,78 @@ class _FeedPageState extends State<FeedPage> {
                                               ],
                                             ),
                                           ),
-                                          PopupMenuButton<String>(
-                                            icon: const Icon(Icons.more_horiz, color: Colors.grey),
-                                            onSelected: (value) async {
-                                              if (value == "edit") {
-                                                final updatedData = await showDialog<UpdateReportRequestDto>(
-                                                  context: context,
-                                                  builder: (context) {
-                                                    final titleController =
-                                                    TextEditingController(text: report.title);
-                                                    final descController =
-                                                    TextEditingController(text: report.description);
-                                                    return AlertDialog(
-                                                      title: const Text("تعديل البلاغ"),
-                                                      content: SingleChildScrollView(
-                                                        child: Column(
-                                                          children: [
-                                                            TextField(
-                                                                controller: titleController,
-                                                                decoration:
-                                                                const InputDecoration(labelText: "العنوان")),
-                                                            TextField(
-                                                                controller: descController,
-                                                                decoration:
-                                                                const InputDecoration(labelText: "الوصف")),
-                                                          ],
-                                                        ),
+                                        currentUserId==interactions!.reporterId ?
+                                        PopupMenuButton<String>(
+                                          icon: const Icon(Icons.more_horiz, color: Colors.grey),
+                                          onSelected: (value) async {
+                                            if (value == "edit") {
+                                              final updatedData = await showDialog<UpdateReportRequestDto>(
+                                                context: context,
+                                                builder: (context) {
+                                                  final titleController =
+                                                  TextEditingController(text: report.title);
+                                                  final descController =
+                                                  TextEditingController(text: report.description);
+                                                  return AlertDialog(
+                                                    title: const Text("تعديل البلاغ"),
+                                                    content: SingleChildScrollView(
+                                                      child: Column(
+                                                        children: [
+                                                          TextField(
+                                                              controller: titleController,
+                                                              decoration:
+                                                              const InputDecoration(labelText: "العنوان")),
+                                                          TextField(
+                                                              controller: descController,
+                                                              decoration:
+                                                              const InputDecoration(labelText: "الوصف")),
+                                                        ],
                                                       ),
-                                                      actions: [
-                                                        TextButton(
-                                                            onPressed: () => Navigator.pop(context),
-                                                            child: const Text("إلغاء")),
-                                                        ElevatedButton(
-                                                          onPressed: () {
-                                                            final dto = UpdateReportRequestDto(
-                                                              title: titleController.text,
-                                                              description: descController.text,
-                                                              category: report.category,
-                                                              visibility: report.visibility,
-                                                              latitude: report.latitude,
-                                                              longitude: report.longitude,
-                                                            );
-                                                            Navigator.pop(context, dto);
-                                                          },
-                                                          child: const Text("حفظ"),
-                                                        ),
-                                                      ],
-                                                    );
-                                                  },
-                                                );
-                                                if (updatedData != null &&
-                                                    (updatedData.title != report.title ||
-                                                        updatedData.description != report.description)) {
-                                                  setState(() {
-                                                    report.title = updatedData.title;
-                                                    report.description = updatedData.description;
-                                                  });
-                                                  await _repo.updateReport(report.id ?? "", updatedData);
-                                                }
-                                              } else if (value == "delete") {
-                                                await _repo.deleteReport(report.id ?? "");
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                          onPressed: () => Navigator.pop(context),
+                                                          child: const Text("إلغاء")),
+                                                      ElevatedButton(
+                                                        onPressed: () {
+                                                          final dto = UpdateReportRequestDto(
+                                                            title: titleController.text,
+                                                            description: descController.text,
+                                                            category: report.category,
+                                                            visibility: report.visibility,
+                                                            latitude: report.latitude,
+                                                            longitude: report.longitude,
+                                                          );
+                                                          Navigator.pop(context, dto);
+                                                        },
+                                                        child: const Text("حفظ"),
+                                                      ),
+                                                    ],
+                                                  );
+                                                },
+                                              );
+                                              if (updatedData != null &&
+                                                  (updatedData.title != report.title ||
+                                                      updatedData.description != report.description)) {
                                                 setState(() {
-                                                  filteredReports.remove(report);
+                                                  report.title = updatedData.title;
+                                                  report.description = updatedData.description;
                                                 });
+                                                await _repo.updateReport(report.id ?? "", updatedData);
                                               }
-                                            },
-                                            itemBuilder: (context) => [
-                                              const PopupMenuItem(value: "edit", child: Text("تعديل")),
-                                              const PopupMenuItem(value: "delete", child: Text("حذف")),
-                                            ],
-                                          ),
+                                            } else if (value == "delete") {
+                                              await _repo.deleteReport(report.id ?? "");
+                                              setState(() {
+                                                filteredReports.remove(report);
+                                              });
+                                            }
+                                          },
+                                          itemBuilder: (context) => [
+                                            const PopupMenuItem(value: "edit", child: Text("تعديل")),
+                                            const PopupMenuItem(value: "delete", child: Text("حذف")),
+                                          ],
+                                        )
+                                            :SizedBox()
                                         ],
                                       ),
                                     ),
@@ -484,25 +514,37 @@ class _FeedPageState extends State<FeedPage> {
                                                               context: context,
                                                               isScrollControlled: true,
                                                               shape: const RoundedRectangleBorder(
-                                                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+                                                                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                                                              ),
                                                               builder: (_) => SizedBox(
                                                                 height: MediaQuery.of(context).size.height * 0.8,
                                                                 child: CommentsSection(reportId: report.id ?? ""),
                                                               ),
                                                             );
+
+                                                            // ✅ إذا تم إضافة كومنت جديد نحدث العد محلياً
                                                             if (newCommentCount != null) {
-                                                              setState(() {
-                                                                interactions?.commentCount = newCommentCount;
-                                                              });
+                                                              _cubit.updateLocalCommentCount(report.id ?? "", newCommentCount);
                                                             }
+
+                                                            // ✅ بعد إغلاق صفحة الكومنت، نعمل Reload كامل
+                                                            await _cubit.loadFirstPage();
                                                           },
                                                         ),
                                                       ],
                                                     ),
                                                   ],
                                                 ),
-                                                const Icon(Icons.open_in_new, color: Colors.grey),
-                                              ],
+                                                IconButton(
+                                                  icon: const Icon(Icons.share, color: Colors.grey),
+                                                  onPressed: () {
+                                                    final textToShare = """
+${report.title ?? "بدون عنوان"}
+${report.description ?? ""}
+""";
+                                                    Share.share(textToShare);
+                                                  },
+                                                ),                                              ],
                                             ),
                                           ),
                                           SizedBox(height: context.hp(1)),
