@@ -16,16 +16,15 @@ jobs:
 
       - run: flutter pub get
 
-      # Install CocoaPods dependencies
-      - run: |
+      - name: Install iOS dependencies
+        run: |
           cd ios
+          pod deintegrate || true
           pod install
           cd ..
 
-      # Build IPA مباشرة
       - run: flutter build ipa --release --no-codesign
 
-      # Upload IPA كـ artifact
       - uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
