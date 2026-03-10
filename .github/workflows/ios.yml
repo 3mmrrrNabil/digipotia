@@ -19,7 +19,6 @@ jobs:
       - name: Install iOS dependencies
         run: |
           cd ios
-          pod deintegrate || true
           pod install
           cd ..
 
